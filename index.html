@@ -1,12 +1,15 @@
 <!DOCTYPE html>
 <!-- Chosen Palette: Warm Neutral (Beige/Off-white), Accent (Deep Purple from card), Highlight (Muted Green from card) -->
-<!-- Application Structure Plan: A single-page application with a language toggle (AR/EN). The structure flows from a hero section with the competition title and a brief introduction, to interactive cards showcasing each competition category (الفئة أ, الفئة ب, الفئة برو-ماكس). Following this, a dedicated section presents comparative data visualizations (bar charts using Chart.js) to highlight differences in fees, discounts, and draw chances, aiding user understanding. A clear 'How to Join' section provides step-by-step instructions. The application concludes with a footer containing a call-to-action and direct contact links. This design prioritizes a guided user journey from initial awareness to detailed understanding and finally to participation, making complex information easily digestible and interactive. -->
+<!-- Application Structure Plan: A single-page application with a language toggle (AR/EN) and multiple views managed by JavaScript.
+    - View 1 (Main Page): Hero section, interactive category cards, comparative charts, "How to Join" section, and footer.
+    - View 2 (Inscription Page): A new view that appears when a user selects a category. This page dynamically displays details of the chosen category, collects user information (name, WhatsApp, phone, payment proof), and simulates submission.
+    This structure guides the user from exploration to action, providing a dedicated form for each category selection, enhancing user experience and clarity for the registration process. -->
 <!-- Visualization & Content Choices:
-    - Competition Categories: Presented as interactive HTML/Tailwind cards. Goal: Inform and allow quick comparison of key features. Interaction: Hover effects for visual feedback. Justification: Cards are intuitive for displaying distinct options.
-    - Cost vs. Benefit Chart: Bar chart using Chart.js. Goal: Visually compare entry fees and discount percentages across categories. Interaction: Dynamic update on language toggle. Justification: Bar charts are excellent for comparing discrete categories.
-    - Chance to Win Chart: Horizontal Bar chart using Chart.js. Goal: Illustrate the inverse relationship between participants needed and winning chance. Interaction: Dynamic update on language toggle. Justification: Horizontal bars are effective for comparing values across categories when labels are longer.
-    - How to Join Steps: HTML/Tailwind numbered steps. Goal: Provide clear, actionable instructions. Interaction: Text updated on language toggle. Justification: Step-by-step format is easy to follow.
-    - Language Toggle: Button. Goal: Provide multilingual access. Interaction: Click updates all text content and chart labels/titles. Justification: Enhances accessibility for diverse users.
+    - Competition Categories: Interactive HTML/Tailwind cards. Goal: Inform and allow quick comparison. Interaction: Click to navigate to inscription page.
+    - Cost vs. Benefit Chart & Chance to Win Chart: Bar charts using Chart.js. Goal: Visually compare data. Interaction: Dynamic update on language toggle.
+    - How to Join Steps: HTML/Tailwind numbered steps. Goal: Provide clear instructions. Interaction: Text updated on language toggle.
+    - Inscription Form: HTML form with input fields and a file upload. Goal: Collect user data for chosen category. Interaction: Dynamic content based on category selection, form submission handling (simulated).
+    - Language Toggle: Button. Goal: Provide multilingual access. Interaction: Click updates all text content across all views and chart labels/titles.
     - All graphics use Chart.js (Canvas) or structured HTML/CSS with Tailwind and Unicode characters/icons. NO SVG graphics used. NO Mermaid JS used. -->
 <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
 <html lang="ar" dir="rtl">
@@ -27,6 +30,7 @@
         }
         .card-category {
             transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer; /* Indicate clickable */
         }
         .card-category:hover {
             transform: translateY(-10px);
@@ -35,21 +39,27 @@
         .chart-container {
             position: relative;
             width: 100%;
-            max-width: 600px; /* Max width to prevent charts from being too wide on large screens */
+            max-width: 600px;
             margin-left: auto;
             margin-right: auto;
-            height: 300px; /* Base height for charts */
-            max-height: 400px; /* Max height to prevent excessive vertical growth */
+            height: 300px;
+            max-height: 400px;
         }
         @media (min-width: 768px) {
             .chart-container {
-                height: 350px; /* Slightly taller on medium screens */
+                height: 350px;
             }
         }
         @media (min-width: 1024px) {
             .chart-container {
-                height: 400px; /* Even taller on large screens */
+                height: 400px;
             }
+        }
+        .view-section {
+            display: none; /* Hidden by default */
+        }
+        .view-section.active {
+            display: block; /* Shown when active */
         }
     </style>
 </head>
@@ -64,100 +74,155 @@
         </div>
     </nav>
 
-    <header class="text-center py-16 md:py-24 bg-purple-50">
-        <div class="container mx-auto px-6">
-            <h2 class="text-4xl md:text-6xl font-extrabold text-purple-900 mb-4" data-key="hero_title">ادخل السحب واربح بورتريه فني</h2>
-            <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto" data-key="hero_subtitle">فرص متعددة للفوز وخصومات حصرية لكل المشاركين. اختر الفئة التي تناسبك وانضم إلينا الآن!</p>
-        </div>
-    </header>
-
-    <main class="container mx-auto px-6 py-12">
-        <section id="categories" class="my-12">
-            <h3 class="text-3xl font-bold text-center mb-10" data-key="categories_title">اختر فئة اشتراكك</h3>
-            <div class="grid md:grid-cols-3 gap-8">
-                <div class="card-category bg-white p-8 rounded-2xl shadow-lg border-t-4 border-purple-300">
-                    <h4 class="text-2xl font-bold text-purple-800 mb-4" data-key="cat_a_title">الفئة أ</h4>
-                    <p class="text-4xl font-extrabold mb-4" data-key="cat_a_price">5 <span data-key="currency">د.م.</span></p>
-                    <ul class="space-y-3 text-gray-700">
-                        <li data-key="cat_a_draw">🎟️ <span class="font-bold">السحب:</span> فائز واحد لكل 100 مشارك</li>
-                        <li data-key="cat_a_discount">💸 <span class="font-bold">خصم:</span> 25% على البورتريه (لمدة 15 يوم)</li>
-                    </ul>
-                </div>
-                <div class="card-category bg-white p-8 rounded-2xl shadow-xl border-t-4 border-purple-600 relative">
-                    <span class="absolute top-0 right-0 -mt-3 mr-3 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase" data-key="popular_badge">الأكثر شيوعًا</span>
-                    <h4 class="text-2xl font-bold text-purple-800 mb-4" data-key="cat_b_title">الفئة ب</h4>
-                    <p class="text-4xl font-extrabold mb-4" data-key="cat_b_price">10 <span data-key="currency">د.م.</span></p>
-                    <ul class="space-y-3 text-gray-700">
-                        <li data-key="cat_b_draw">🎯 <span class="font-bold">السحب:</span> عند وصول 50 مشاركًا</li>
-                        <li data-key="cat_b_discount">💰 <span class="font-bold">خصم:</span> 35% على كل طلب بورتريه</li>
-                    </ul>
-                </div>
-                <div class="card-category bg-white p-8 rounded-2xl shadow-lg border-t-4 border-green-400">
-                    <h4 class="text-2xl font-bold text-purple-800 mb-4" data-key="cat_c_title">الفئة برو-ماكس</h4>
-                    <p class="text-4xl font-extrabold mb-4" data-key="cat_c_price">20 <span data-key="currency">د.م.</span></p>
-                    <ul class="space-y-3 text-gray-700">
-                        <li data-key="cat_c_draw">⭐ <span class="font-bold">السحب:</span> عند بلوغ 30 مشاركًا فقط</li>
-                        <li data-key="cat_c_discount">💎 <span class="font-bold">خصم:</span> 50% على طلب البورتريه</li>
-                    </ul>
-                </div>
+    <!-- Main Page View -->
+    <div id="main-view" class="view-section active">
+        <header class="text-center py-16 md:py-24 bg-purple-50">
+            <div class="container mx-auto px-6">
+                <h2 class="text-4xl md:text-6xl font-extrabold text-purple-900 mb-4" data-key="hero_title">ادخل السحب واربح بورتريه فني</h2>
+                <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto" data-key="hero_subtitle">فرص متعددة للفوز وخصومات حصرية لكل المشاركين. اختر الفئة التي تناسبك وانضم إلينا الآن!</p>
             </div>
-        </section>
+        </header>
 
-        <section id="charts" class="my-20">
-            <h3 class="text-3xl font-bold text-center mb-10" data-key="charts_title">مقارنة بين الفئات</h3>
-            <div class="grid md:grid-cols-2 gap-12">
-                <div>
-                    <h4 class="text-xl font-bold text-center mb-4" data-key="chart1_title">التكلفة مقابل الخصم</h4>
-                    <div class="chart-container bg-white p-4 rounded-xl shadow-md">
-                        <canvas id="costBenefitChart"></canvas>
+        <main class="container mx-auto px-6 py-12">
+            <section id="categories" class="my-12">
+                <h3 class="text-3xl font-bold text-center mb-10" data-key="categories_title">اختر فئة اشتراكك</h3>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="card-category bg-white p-8 rounded-2xl shadow-lg border-t-4 border-purple-300" data-category="A">
+                        <h4 class="text-2xl font-bold text-purple-800 mb-4" data-key="cat_a_title">الفئة أ</h4>
+                        <p class="text-4xl font-extrabold mb-4" data-key="cat_a_price">5 <span data-key="currency">د.م.</span></p>
+                        <ul class="space-y-3 text-gray-700">
+                            <li data-key="cat_a_draw">🎟️ <span class="font-bold">السحب:</span> فائز واحد لكل 100 مشارك</li>
+                            <li data-key="cat_a_discount">💸 <span class="font-bold">خصم:</span> 25% على البورتريه (لمدة 15 يوم)</li>
+                        </ul>
+                    </div>
+                    <div class="card-category bg-white p-8 rounded-2xl shadow-xl border-t-4 border-purple-600 relative" data-category="B">
+                        <span class="absolute top-0 right-0 -mt-3 mr-3 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase" data-key="popular_badge">الأكثر شيوعًا</span>
+                        <h4 class="text-2xl font-bold text-purple-800 mb-4" data-key="cat_b_title">الفئة ب</h4>
+                        <p class="text-4xl font-extrabold mb-4" data-key="cat_b_price">10 <span data-key="currency">د.م.</span></p>
+                        <ul class="space-y-3 text-gray-700">
+                            <li data-key="cat_b_draw">🎯 <span class="font-bold">السحب:</span> عند وصول 50 مشاركًا</li>
+                            <li data-key="cat_b_discount">💰 <span class="font-bold">خصم:</span> 35% على كل طلب بورتريه</li>
+                        </ul>
+                    </div>
+                    <div class="card-category bg-white p-8 rounded-2xl shadow-lg border-t-4 border-green-400" data-category="C">
+                        <h4 class="text-2xl font-bold text-purple-800 mb-4" data-key="cat_c_title">الفئة برو-ماكس</h4>
+                        <p class="text-4xl font-extrabold mb-4" data-key="cat_c_price">20 <span data-key="currency">د.م.</span></p>
+                        <ul class="space-y-3 text-gray-700">
+                            <li data-key="cat_c_draw">⭐ <span class="font-bold">السحب:</span> عند بلوغ 30 مشاركًا فقط</li>
+                            <li data-key="cat_c_discount">💎 <span class="font-bold">خصم:</span> 50% على طلب البورتريه</li>
+                        </ul>
                     </div>
                 </div>
-                <div>
-                    <h4 class="text-xl font-bold text-center mb-4" data-key="chart2_title">فرصة الفوز (مشاركون أقل = فرصة أكبر)</h4>
-                    <div class="chart-container bg-white p-4 rounded-xl shadow-md">
-                        <canvas id="chanceToWinChart"></canvas>
+            </section>
+
+            <section id="charts" class="my-20">
+                <h3 class="text-3xl font-bold text-center mb-10" data-key="charts_title">مقارنة بين الفئات</h3>
+                <div class="grid md:grid-cols-2 gap-12">
+                    <div>
+                        <h4 class="text-xl font-bold text-center mb-4" data-key="chart1_title">التكلفة مقابل الخصم</h4>
+                        <div class="chart-container bg-white p-4 rounded-xl shadow-md">
+                            <canvas id="costBenefitChart"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 class="text-xl font-bold text-center mb-4" data-key="chart2_title">فرصة الفوز (مشاركون أقل = فرصة أكبر)</h4>
+                        <div class="chart-container bg-white p-4 rounded-xl shadow-md">
+                            <canvas id="chanceToWinChart"></canvas>
+                        </div>
                     </div>
                 </div>
+            </section>
+
+            <section id="how-to-join" class="my-20 text-center">
+                <h3 class="text-3xl font-bold text-center mb-10" data-key="join_title">كيف تشارك؟</h3>
+                <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                    <div class="flex flex-col items-center">
+                        <div class="bg-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mb-4">1</div>
+                        <h4 class="text-xl font-bold mb-2" data-key="step1_title">اختر فئتك</h4>
+                        <p class="text-gray-600" data-key="step1_desc">اختر الفئة التي تناسبك من بين الفئات الثلاث المتاحة.</p>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="bg-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mb-4">2</div>
+                        <h4 class="text-xl font-bold mb-2" data-key="step2_title">تواصل معنا</h4>
+                        <p class="text-gray-600" data-key="step2_desc">اضغط على زر الواتساب وتواصل معنا لإتمام عملية الدفع.</p>
+                    </div>
+                    <div class="flex flex-col items-center">
+                        <div class="bg-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mb-4">3</div>
+                        <h4 class="text-xl font-bold mb-2" data-key="step3_title">ادخل السحب!</h4>
+                        <p class="text-gray-600" data-key="step3_desc">بمجرد تأكيد الدفع، أنت مشترك رسميًا في السحب. حظًا موفقًا!</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="bg-purple-900 text-white text-center py-12">
+            <div class="container mx-auto px-6">
+                <h3 class="text-2xl font-bold mb-4" data-key="footer_title">هل أنت مستعد للانضمام؟</h3>
+                <p class="text-purple-200 mb-8" data-key="footer_subtitle">تواصل معنا الآن عبر واتساب لبدء اشتراكك أو تابعنا على انستغرام!</p>
+                <div class="flex justify-center gap-6">
+                    <a href="https://wa.me/212691700038" target="_blank" class="bg-green-500 text-white font-bold py-3 px-8 rounded-full hover:bg-green-600 transition-transform transform hover:scale-105" data-key="whatsapp_btn">
+                        تواصل عبر واتساب
+                    </a>
+                    <a href="https://instagram.com/ali01art" target="_blank" class="bg-pink-600 text-white font-bold py-3 px-8 rounded-full hover:bg-pink-700 transition-transform transform hover:scale-105" data-key="instagram_btn">
+                        تابعنا على انستغرام
+                    </a>
+                </div>
             </div>
-        </section>
+        </footer>
+    </div>
 
-        <section id="how-to-join" class="my-20 text-center">
-            <h3 class="text-3xl font-bold text-center mb-10" data-key="join_title">كيف تشارك؟</h3>
-            <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
-                <div class="flex flex-col items-center">
-                    <div class="bg-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mb-4">1</div>
-                    <h4 class="text-xl font-bold mb-2" data-key="step1_title">اختر فئتك</h4>
-                    <p class="text-gray-600" data-key="step1_desc">اختر الفئة التي تناسبك من بين الفئات الثلاث المتاحة.</p>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="bg-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mb-4">2</div>
-                    <h4 class="text-xl font-bold mb-2" data-key="step2_title">تواصل معنا</h4>
-                    <p class="text-gray-600" data-key="step2_desc">اضغط على زر الواتساب وتواصل معنا لإتمام عملية الدفع.</p>
-                </div>
-                <div class="flex flex-col items-center">
-                    <div class="bg-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mb-4">3</div>
-                    <h4 class="text-xl font-bold mb-2" data-key="step3_title">ادخل السحب!</h4>
-                    <p class="text-gray-600" data-key="step3_desc">بمجرد تأكيد الدفع، أنت مشترك رسميًا في السحب. حظًا موفقًا!</p>
-                </div>
+    <!-- Inscription Page View -->
+    <div id="inscription-view" class="view-section bg-purple-50 py-16 md:py-24 px-6">
+        <div class="container mx-auto max-w-2xl bg-white p-8 rounded-2xl shadow-xl">
+            <button id="back-to-main-btn" class="mb-6 bg-gray-200 text-gray-700 font-bold py-2 px-4 rounded-full hover:bg-gray-300 transition-colors duration-300">
+                ← <span data-key="back_button_text">العودة للصفحة الرئيسية</span>
+            </button>
+
+            <h3 class="text-3xl font-bold text-center text-purple-800 mb-8" data-key="inscription_title">التسجيل في المسابقة</h3>
+            
+            <div class="mb-8 p-4 bg-purple-100 rounded-lg border border-purple-200">
+                <h4 class="text-xl font-bold text-purple-700 mb-2" data-key="chosen_category_summary_title">الفئة المختارة:</h4>
+                <p class="text-lg text-gray-700 mb-1">
+                    <span class="font-bold" data-key="inscription_category_name"></span> (<span data-key="inscription_category_price"></span>)
+                </p>
+                <p class="text-md text-gray-600" data-key="inscription_category_discount"></p>
             </div>
-        </section>
 
-    </main>
+            <form id="inscription-form" class="space-y-6">
+                <div>
+                    <label for="full-name" class="block text-lg font-semibold text-gray-700 mb-2" data-key="form_full_name_label">الاسم الكامل:</label>
+                    <input type="text" id="full-name" name="fullName" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500" required>
+                </div>
+                <div>
+                    <label for="whatsapp-number" class="block text-lg font-semibold text-gray-700 mb-2" data-key="form_whatsapp_label">رقم الواتساب:</label>
+                    <input type="tel" id="whatsapp-number" name="whatsappNumber" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500" required>
+                </div>
+                <div>
+                    <label for="phone-number" class="block text-lg font-semibold text-gray-700 mb-2" data-key="form_phone_label">رقم الهاتف (اختياري):</label>
+                    <input type="tel" id="phone-number" name="phoneNumber" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500">
+                </div>
+                <div>
+                    <label for="payment-proof" class="block text-lg font-semibold text-gray-700 mb-2" data-key="form_payment_proof_label">صورة إثبات الدفع:</label>
+                    <input type="file" id="payment-proof" name="paymentProof" accept="image/*" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500" required>
+                    <p class="text-sm text-gray-500 mt-1" data-key="form_payment_proof_hint">يرجى إرسال صورة واضحة لإيصال الدفع.</p>
+                </div>
+                
+                <button type="submit" class="w-full bg-purple-700 text-white font-bold py-3 px-6 rounded-full hover:bg-purple-800 transition-transform transform hover:scale-105" data-key="form_submit_button">
+                    تأكيد الاشتراك
+                </button>
+            </form>
 
-    <footer class="bg-purple-900 text-white text-center py-12">
-        <div class="container mx-auto px-6">
-            <h3 class="text-2xl font-bold mb-4" data-key="footer_title">هل أنت مستعد للانضمام؟</h3>
-            <p class="text-purple-200 mb-8" data-key="footer_subtitle">تواصل معنا الآن عبر واتساب لبدء اشتراكك أو تابعنا على انستغرام!</p>
-            <div class="flex justify-center gap-6">
-                <a href="https://wa.me/212691700038" target="_blank" class="bg-green-500 text-white font-bold py-3 px-8 rounded-full hover:bg-green-600 transition-transform transform hover:scale-105" data-key="whatsapp_btn">
-                    تواصل عبر واتساب
-                </a>
-                <a href="https://instagram.com/ali01art" target="_blank" class="bg-pink-600 text-white font-bold py-3 px-8 rounded-full hover:bg-pink-700 transition-transform transform hover:scale-105" data-key="instagram_btn">
-                    تابعنا على انستغرام
-                </a>
+            <div id="submission-message" class="mt-8 p-4 bg-green-100 text-green-800 rounded-lg hidden" data-key="submission_success_message">
+                <p class="font-bold" data-key="submission_success_title">تم تسجيل اشتراكك بنجاح!</p>
+                <p data-key="submission_success_details"></p>
+                <p class="mt-2" data-key="submission_contact_info">سيتم التواصل معك قريباً على رقم الواتساب الذي قدمته.</p>
+            </div>
+             <div id="submission-error-message" class="mt-8 p-4 bg-red-100 text-red-800 rounded-lg hidden" data-key="submission_error_message">
+                <p class="font-bold" data-key="submission_error_title">خطأ في التسجيل!</p>
+                <p data-key="submission_error_details">يرجى التأكد من ملء جميع الحقول المطلوبة.</p>
             </div>
         </div>
-    </footer>
+    </div>
 
     <script>
         const content = {
@@ -175,10 +240,12 @@
                 popular_badge: "الأكثر شيوعًا",
                 cat_b_title: "الفئة ب",
                 cat_b_price: "10",
+                currency: "د.م.",
                 cat_b_draw: "🎯 <span class='font-bold'>السحب:</span> عند وصول 50 مشاركًا",
                 cat_b_discount: "💰 <span class='font-bold'>خصم:</span> 35% على كل طلب بورتريه",
                 cat_c_title: "الفئة برو-ماكس",
                 cat_c_price: "20",
+                currency: "د.م.",
                 cat_c_draw: "⭐ <span class='font-bold'>السحب:</span> عند بلوغ 30 مشاركًا فقط",
                 cat_c_discount: "💎 <span class='font-bold'>خصم:</span> 50% على طلب البورتريه",
                 charts_title: "مقارنة بين الفئات",
@@ -198,7 +265,22 @@
                 footer_title: "هل أنت مستعد للانضمام؟",
                 footer_subtitle: "تواصل معنا الآن عبر واتساب لبدء اشتراكك أو تابعنا على انستغرام!",
                 whatsapp_btn: "تواصل عبر واتساب",
-                instagram_btn: "تابعنا على انستغرام"
+                instagram_btn: "تابعنا على انستغرام",
+                // Inscription Page Content
+                back_button_text: "العودة للصفحة الرئيسية",
+                inscription_title: "التسجيل في المسابقة",
+                chosen_category_summary_title: "الفئة المختارة:",
+                form_full_name_label: "الاسم الكامل:",
+                form_whatsapp_label: "رقم الواتساب:",
+                form_phone_label: "رقم الهاتف (اختياري):",
+                form_payment_proof_label: "صورة إثبات الدفع:",
+                form_payment_proof_hint: "يرجى إرسال صورة واضحة لإيصال الدفع.",
+                form_submit_button: "تأكيد الاشتراك",
+                submission_success_title: "تم تسجيل اشتراكك بنجاح!",
+                submission_success_details: "لقد قمت بالتسجيل في فئة {categoryName} بمعلوماتك.",
+                submission_contact_info: "سيتم التواصل معك قريباً على رقم الواتساب الذي قدمته.",
+                submission_error_title: "خطأ في التسجيل!",
+                submission_error_details: "يرجى التأكد من ملء جميع الحقول المطلوبة.",
             },
             en: {
                 title: "Grand Prize Draw for Portraits",
@@ -214,10 +296,12 @@
                 popular_badge: "Popular",
                 cat_b_title: "Category B",
                 cat_b_price: "10",
+                currency: "MAD",
                 cat_b_draw: "🎯 <span class='font-bold'>Draw:</span> When 50 participants are reached",
                 cat_b_discount: "💰 <span class='font-bold'>Discount:</span> 35% on every portrait order",
                 cat_c_title: "Category Pro-Max",
                 cat_c_price: "20",
+                currency: "MAD",
                 cat_c_draw: "⭐ <span class='font-bold'>Draw:</span> When only 30 participants are reached",
                 cat_c_discount: "💎 <span class='font-bold'>Discount:</span> 50% on a portrait order",
                 charts_title: "Category Comparison",
@@ -237,13 +321,41 @@
                 footer_title: "Ready to Join?",
                 footer_subtitle: "Contact us now on WhatsApp to start your subscription or follow us on Instagram!",
                 whatsapp_btn: "Contact on WhatsApp",
-                instagram_btn: "Follow on Instagram"
+                instagram_btn: "Follow on Instagram",
+                // Inscription Page Content
+                back_button_text: "Back to Main Page",
+                inscription_title: "Competition Registration",
+                chosen_category_summary_title: "Chosen Category:",
+                form_full_name_label: "Full Name:",
+                form_whatsapp_label: "WhatsApp Number:",
+                form_phone_label: "Phone Number (Optional):",
+                form_payment_proof_label: "Payment Proof Image:",
+                form_payment_proof_hint: "Please upload a clear image of your payment receipt.",
+                form_submit_button: "Confirm Subscription",
+                submission_success_title: "Subscription Successful!",
+                submission_success_details: "You have successfully registered for {categoryName} with your information.",
+                submission_contact_info: "We will contact you shortly on the WhatsApp number you provided.",
+                submission_error_title: "Registration Error!",
+                submission_error_details: "Please ensure all required fields are filled.",
             }
         };
 
-        let currentLang = 'ar';
+        let currentLang = 'ar'; // Default language
         const langToggleButton = document.getElementById('lang-toggle');
         let costBenefitChart, chanceToWinChart;
+
+        const mainView = document.getElementById('main-view');
+        const inscriptionView = document.getElementById('inscription-view');
+        const backToMainBtn = document.getElementById('back-to-main-btn');
+        const categoryCards = document.querySelectorAll('.card-category');
+        const inscriptionCategoryName = document.querySelector('[data-key="inscription_category_name"]');
+        const inscriptionCategoryPrice = document.querySelector('[data-key="inscription_category_price"]');
+        const inscriptionCategoryDiscount = document.querySelector('[data-key="inscription_category_discount"]');
+        const inscriptionForm = document.getElementById('inscription-form');
+        const submissionMessage = document.getElementById('submission-message');
+        const submissionErrorMessage = document.getElementById('submission-error-message');
+        const submissionSuccessDetails = submissionMessage.querySelector('[data-key="submission_success_details"]');
+
 
         function wrapLabel(label, maxChars = 16) {
             if (typeof label !== 'string') return label;
@@ -383,12 +495,96 @@
             });
         }
         
+        // View switching logic
+        function showView(viewId) {
+            document.querySelectorAll('.view-section').forEach(view => {
+                view.classList.remove('active');
+            });
+            document.getElementById(viewId).classList.add('active');
+            window.scrollTo(0, 0); // Scroll to top when changing view
+        }
+
+        // Event listeners
         langToggleButton.addEventListener('click', () => {
             currentLang = currentLang === 'ar' ? 'en' : 'ar';
             updateContent(currentLang);
-            createCharts(currentLang);
+            createCharts(currentLang); // Recreate charts to update labels/direction
         });
 
+        categoryCards.forEach(card => {
+            card.addEventListener('click', () => {
+                const categoryType = card.dataset.category;
+                let categoryName, categoryPrice, categoryDiscount;
+
+                if (categoryType === 'A') {
+                    categoryName = content[currentLang].cat_a_title;
+                    categoryPrice = content[currentLang].cat_a_price + ' ' + content[currentLang].currency;
+                    categoryDiscount = content[currentLang].cat_a_discount.replace(/<[^>]*>/g, ''); // Remove HTML tags
+                } else if (categoryType === 'B') {
+                    categoryName = content[currentLang].cat_b_title;
+                    categoryPrice = content[currentLang].cat_b_price + ' ' + content[currentLang].currency;
+                    categoryDiscount = content[currentLang].cat_b_discount.replace(/<[^>]*>/g, '');
+                } else if (categoryType === 'C') {
+                    categoryName = content[currentLang].cat_c_title;
+                    categoryPrice = content[currentLang].cat_c_price + ' ' + content[currentLang].currency;
+                    categoryDiscount = content[currentLang].cat_c_discount.replace(/<[^>]*>/g, '');
+                }
+
+                inscriptionCategoryName.textContent = categoryName;
+                inscriptionCategoryPrice.textContent = categoryPrice;
+                inscriptionCategoryDiscount.textContent = categoryDiscount;
+                
+                showView('inscription-view');
+                // Update inscription page text after showing it
+                updateContent(currentLang);
+            });
+        });
+
+        backToMainBtn.addEventListener('click', () => {
+            showView('main-view');
+            // Recreate charts when returning to main view to ensure responsiveness
+            createCharts(currentLang); 
+            // Hide submission messages
+            submissionMessage.classList.add('hidden');
+            submissionErrorMessage.classList.add('hidden');
+            inscriptionForm.reset(); // Clear form fields
+        });
+
+        inscriptionForm.addEventListener('submit', (event) => {
+            event.preventDefault(); // Prevent default form submission
+
+            submissionMessage.classList.add('hidden');
+            submissionErrorMessage.classList.add('hidden');
+
+            const fullName = document.getElementById('full-name').value;
+            const whatsappNumber = document.getElementById('whatsapp-number').value;
+            const phoneNumber = document.getElementById('phone-number').value;
+            const paymentProof = document.getElementById('payment-proof').files[0]; // File object
+
+            if (!fullName || !whatsappNumber || !paymentProof) {
+                submissionErrorMessage.classList.remove('hidden');
+                return;
+            }
+
+            // Simulate submission (in a real app, you'd send this data to a server/database)
+            console.log('Form Submitted:', {
+                fullName,
+                whatsappNumber,
+                phoneNumber,
+                category: inscriptionCategoryName.textContent,
+                paymentProof: paymentProof ? paymentProof.name : 'No file'
+            });
+
+            // Display success message
+            let successMessageHtml = content[currentLang].submission_success_details.replace('{categoryName}', inscriptionCategoryName.textContent);
+            submissionSuccessDetails.innerHTML = successMessageHtml;
+            submissionMessage.classList.remove('hidden');
+            
+            inscriptionForm.reset(); // Clear form fields after successful submission
+        });
+
+
+        // Initial setup on page load
         window.onload = () => {
             updateContent(currentLang);
             createCharts(currentLang);
