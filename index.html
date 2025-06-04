@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<!-- Chosen Palette: Warm Neutral (Beige/Off-white), Accent (Deep Purple from card), Highlight (Muted Green from card) -->
+<!-- Application Structure Plan: A single-page application with a language toggle (AR/EN). The structure flows from a hero section with the competition title and a brief introduction, to interactive cards showcasing each competition category (الفئة أ, الفئة ب, الفئة برو-ماكس). Following this, a dedicated section presents comparative data visualizations (bar charts using Chart.js) to highlight differences in fees, discounts, and draw chances, aiding user understanding. A clear 'How to Join' section provides step-by-step instructions. The application concludes with a footer containing a call-to-action and direct contact links. This design prioritizes a guided user journey from initial awareness to detailed understanding and finally to participation, making complex information easily digestible and interactive. -->
+<!-- Visualization & Content Choices:
+    - Competition Categories: Presented as interactive HTML/Tailwind cards. Goal: Inform and allow quick comparison of key features. Interaction: Hover effects for visual feedback. Justification: Cards are intuitive for displaying distinct options.
+    - Cost vs. Benefit Chart: Bar chart using Chart.js. Goal: Visually compare entry fees and discount percentages across categories. Interaction: Dynamic update on language toggle. Justification: Bar charts are excellent for comparing discrete categories.
+    - Chance to Win Chart: Horizontal Bar chart using Chart.js. Goal: Illustrate the inverse relationship between participants needed and winning chance. Interaction: Dynamic update on language toggle. Justification: Horizontal bars are effective for comparing values across categories when labels are longer.
+    - How to Join Steps: HTML/Tailwind numbered steps. Goal: Provide clear, actionable instructions. Interaction: Text updated on language toggle. Justification: Step-by-step format is easy to follow.
+    - Language Toggle: Button. Goal: Provide multilingual access. Interaction: Click updates all text content and chart labels/titles. Justification: Enhances accessibility for diverse users.
+    - All graphics use Chart.js (Canvas) or structured HTML/CSS with Tailwind and Unicode characters/icons. NO SVG graphics used. NO Mermaid JS used. -->
+<!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-key="title">مسابقة السحب الكبرى على البورتريهات</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #FDFBF7;
+            scroll-behavior: smooth;
+        }
+        .card-category {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-category:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px; /* Max width to prevent charts from being too wide on large screens */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Base height for charts */
+            max-height: 400px; /* Max height to prevent excessive vertical growth */
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px; /* Slightly taller on medium screens */
+            }
+        }
+        @media (min-width: 1024px) {
+            .chart-container {
+                height: 400px; /* Even taller on large screens */
+            }
+        }
+    </style>
+</head>
+<body class="bg-[#FDFBF7] text-gray-800">
+
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-6 py-3 flex justify-between items-center">
+            <h1 class="text-xl font-bold text-purple-800" data-key="nav_title">مسابقة السحب الكبرى</h1>
+            <button id="lang-toggle" class="bg-purple-700 text-white font-bold py-2 px-4 rounded-full hover:bg-purple-800 transition-colors duration-300">
+                English
+            </button>
+        </div>
+    </nav>
+
+    <header class="text-center py-16 md:py-24 bg-purple-50">
+        <div class="container mx-auto px-6">
+            <h2 class="text-4xl md:text-6xl font-extrabold text-purple-900 mb-4" data-key="hero_title">ادخل السحب واربح بورتريه فني</h2>
+            <p class="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto" data-key="hero_subtitle">فرص متعددة للفوز وخصومات حصرية لكل المشاركين. اختر الفئة التي تناسبك وانضم إلينا الآن!</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+        <section id="categories" class="my-12">
+            <h3 class="text-3xl font-bold text-center mb-10" data-key="categories_title">اختر فئة اشتراكك</h3>
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="card-category bg-white p-8 rounded-2xl shadow-lg border-t-4 border-purple-300">
+                    <h4 class="text-2xl font-bold text-purple-800 mb-4" data-key="cat_a_title">الفئة أ</h4>
+                    <p class="text-4xl font-extrabold mb-4" data-key="cat_a_price">5 <span data-key="currency">د.م.</span></p>
+                    <ul class="space-y-3 text-gray-700">
+                        <li data-key="cat_a_draw">🎟️ <span class="font-bold">السحب:</span> فائز واحد لكل 100 مشارك</li>
+                        <li data-key="cat_a_discount">💸 <span class="font-bold">خصم:</span> 25% على البورتريه (لمدة 15 يوم)</li>
+                    </ul>
+                </div>
+                <div class="card-category bg-white p-8 rounded-2xl shadow-xl border-t-4 border-purple-600 relative">
+                    <span class="absolute top-0 right-0 -mt-3 mr-3 bg-purple-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase" data-key="popular_badge">الأكثر شيوعًا</span>
+                    <h4 class="text-2xl font-bold text-purple-800 mb-4" data-key="cat_b_title">الفئة ب</h4>
+                    <p class="text-4xl font-extrabold mb-4" data-key="cat_b_price">10 <span data-key="currency">د.م.</span></p>
+                    <ul class="space-y-3 text-gray-700">
+                        <li data-key="cat_b_draw">🎯 <span class="font-bold">السحب:</span> عند وصول 50 مشاركًا</li>
+                        <li data-key="cat_b_discount">💰 <span class="font-bold">خصم:</span> 35% على كل طلب بورتريه</li>
+                    </ul>
+                </div>
+                <div class="card-category bg-white p-8 rounded-2xl shadow-lg border-t-4 border-green-400">
+                    <h4 class="text-2xl font-bold text-purple-800 mb-4" data-key="cat_c_title">الفئة برو-ماكس</h4>
+                    <p class="text-4xl font-extrabold mb-4" data-key="cat_c_price">20 <span data-key="currency">د.م.</span></p>
+                    <ul class="space-y-3 text-gray-700">
+                        <li data-key="cat_c_draw">⭐ <span class="font-bold">السحب:</span> عند بلوغ 30 مشاركًا فقط</li>
+                        <li data-key="cat_c_discount">💎 <span class="font-bold">خصم:</span> 50% على طلب البورتريه</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="charts" class="my-20">
+            <h3 class="text-3xl font-bold text-center mb-10" data-key="charts_title">مقارنة بين الفئات</h3>
+            <div class="grid md:grid-cols-2 gap-12">
+                <div>
+                    <h4 class="text-xl font-bold text-center mb-4" data-key="chart1_title">التكلفة مقابل الخصم</h4>
+                    <div class="chart-container bg-white p-4 rounded-xl shadow-md">
+                        <canvas id="costBenefitChart"></canvas>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-xl font-bold text-center mb-4" data-key="chart2_title">فرصة الفوز (مشاركون أقل = فرصة أكبر)</h4>
+                    <div class="chart-container bg-white p-4 rounded-xl shadow-md">
+                        <canvas id="chanceToWinChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="how-to-join" class="my-20 text-center">
+            <h3 class="text-3xl font-bold text-center mb-10" data-key="join_title">كيف تشارك؟</h3>
+            <div class="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+                <div class="flex flex-col items-center">
+                    <div class="bg-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mb-4">1</div>
+                    <h4 class="text-xl font-bold mb-2" data-key="step1_title">اختر فئتك</h4>
+                    <p class="text-gray-600" data-key="step1_desc">اختر الفئة التي تناسبك من بين الفئات الثلاث المتاحة.</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="bg-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mb-4">2</div>
+                    <h4 class="text-xl font-bold mb-2" data-key="step2_title">تواصل معنا</h4>
+                    <p class="text-gray-600" data-key="step2_desc">اضغط على زر الواتساب وتواصل معنا لإتمام عملية الدفع.</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="bg-purple-600 text-white w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold mb-4">3</div>
+                    <h4 class="text-xl font-bold mb-2" data-key="step3_title">ادخل السحب!</h4>
+                    <p class="text-gray-600" data-key="step3_desc">بمجرد تأكيد الدفع، أنت مشترك رسميًا في السحب. حظًا موفقًا!</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-purple-900 text-white text-center py-12">
+        <div class="container mx-auto px-6">
+            <h3 class="text-2xl font-bold mb-4" data-key="footer_title">هل أنت مستعد للانضمام؟</h3>
+            <p class="text-purple-200 mb-8" data-key="footer_subtitle">تواصل معنا الآن عبر واتساب لبدء اشتراكك أو تابعنا على انستغرام!</p>
+            <div class="flex justify-center gap-6">
+                <a href="https://wa.me/212691700038" target="_blank" class="bg-green-500 text-white font-bold py-3 px-8 rounded-full hover:bg-green-600 transition-transform transform hover:scale-105" data-key="whatsapp_btn">
+                    تواصل عبر واتساب
+                </a>
+                <a href="https://instagram.com/ali01art" target="_blank" class="bg-pink-600 text-white font-bold py-3 px-8 rounded-full hover:bg-pink-700 transition-transform transform hover:scale-105" data-key="instagram_btn">
+                    تابعنا على انستغرام
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const content = {
+            ar: {
+                title: "مسابقة السحب الكبرى على البورتريهات",
+                nav_title: "مسابقة السحب الكبرى",
+                hero_title: "ادخل السحب واربح بورتريه فني",
+                hero_subtitle: "فرص متعددة للفوز وخصومات حصرية لكل المشاركين. اختر الفئة التي تناسبك وانضم إلينا الآن!",
+                categories_title: "اختر فئة اشتراكك",
+                cat_a_title: "الفئة أ",
+                cat_a_price: "5",
+                currency: "د.م.",
+                cat_a_draw: "🎟️ <span class='font-bold'>السحب:</span> فائز واحد لكل 100 مشارك",
+                cat_a_discount: "💸 <span class='font-bold'>خصم:</span> 25% على البورتريه (لمدة 15 يوم)",
+                popular_badge: "الأكثر شيوعًا",
+                cat_b_title: "الفئة ب",
+                cat_b_price: "10",
+                cat_b_draw: "🎯 <span class='font-bold'>السحب:</span> عند وصول 50 مشاركًا",
+                cat_b_discount: "💰 <span class='font-bold'>خصم:</span> 35% على كل طلب بورتريه",
+                cat_c_title: "الفئة برو-ماكس",
+                cat_c_price: "20",
+                cat_c_draw: "⭐ <span class='font-bold'>السحب:</span> عند بلوغ 30 مشاركًا فقط",
+                cat_c_discount: "💎 <span class='font-bold'>خصم:</span> 50% على طلب البورتريه",
+                charts_title: "مقارنة بين الفئات",
+                chart1_title: "التكلفة مقابل الخصم",
+                chart1_fee_label: "رسوم الاشتراك (د.م.)",
+                chart1_discount_label: "نسبة الخصم (%)",
+                chart2_title: "فرصة الفوز (مشاركون أقل = فرصة أكبر)",
+                chart2_participants_label: "عدد المشاركين المطلوب للسحب",
+                chart_categories: ["الفئة أ", "الفئة ب", "الفئة برو-ماكس"],
+                join_title: "كيف تشارك؟",
+                step1_title: "اختر فئتك",
+                step1_desc: "اختر الفئة التي تناسبك من بين الفئات الثلاث المتاحة.",
+                step2_title: "تواصل معنا",
+                step2_desc: "اضغط على زر الواتساب وتواصل معنا لإتمام عملية الدفع.",
+                step3_title: "ادخل السحب!",
+                step3_desc: "بمجرد تأكيد الدفع، أنت مشترك رسميًا في السحب. حظًا موفقًا!",
+                footer_title: "هل أنت مستعد للانضمام؟",
+                footer_subtitle: "تواصل معنا الآن عبر واتساب لبدء اشتراكك أو تابعنا على انستغرام!",
+                whatsapp_btn: "تواصل عبر واتساب",
+                instagram_btn: "تابعنا على انستغرام"
+            },
+            en: {
+                title: "Grand Prize Draw for Portraits",
+                nav_title: "Grand Prize Draw",
+                hero_title: "Enter the Draw & Win an Artistic Portrait",
+                hero_subtitle: "Multiple chances to win and exclusive discounts for all participants. Choose your category and join us now!",
+                categories_title: "Choose Your Subscription Category",
+                cat_a_title: "Category A",
+                cat_a_price: "5",
+                currency: "MAD",
+                cat_a_draw: "🎟️ <span class='font-bold'>Draw:</span> 1 winner per 100 participants",
+                cat_a_discount: "💸 <span class='font-bold'>Discount:</span> 25% on a portrait (for 15 days)",
+                popular_badge: "Popular",
+                cat_b_title: "Category B",
+                cat_b_price: "10",
+                cat_b_draw: "🎯 <span class='font-bold'>Draw:</span> When 50 participants are reached",
+                cat_b_discount: "💰 <span class='font-bold'>Discount:</span> 35% on every portrait order",
+                cat_c_title: "Category Pro-Max",
+                cat_c_price: "20",
+                cat_c_draw: "⭐ <span class='font-bold'>Draw:</span> When only 30 participants are reached",
+                cat_c_discount: "💎 <span class='font-bold'>Discount:</span> 50% on a portrait order",
+                charts_title: "Category Comparison",
+                chart1_title: "Cost vs. Benefit",
+                chart1_fee_label: "Entry Fee (MAD)",
+                chart1_discount_label: "Discount Percentage (%)",
+                chart2_title: "Chance to Win (Fewer participants = Higher chance)",
+                chart2_participants_label: "Participants Needed for Draw",
+                chart_categories: ["Category A", "Category B", "Category Pro-Max"],
+                join_title: "How to Join?",
+                step1_title: "Choose Your Category",
+                step1_desc: "Select the category that suits you best from the three available options.",
+                step2_title: "Contact Us",
+                step2_desc: "Click the WhatsApp button and contact us to complete the payment.",
+                step3_title: "Enter the Draw!",
+                step3_desc: "Once payment is confirmed, you are officially in the draw. Good luck!",
+                footer_title: "Ready to Join?",
+                footer_subtitle: "Contact us now on WhatsApp to start your subscription or follow us on Instagram!",
+                whatsapp_btn: "Contact on WhatsApp",
+                instagram_btn: "Follow on Instagram"
+            }
+        };
+
+        let currentLang = 'ar';
+        const langToggleButton = document.getElementById('lang-toggle');
+        let costBenefitChart, chanceToWinChart;
+
+        function wrapLabel(label, maxChars = 16) {
+            if (typeof label !== 'string') return label;
+            const words = label.split(' ');
+            let lines = [];
+            let currentLine = '';
+
+            words.forEach(word => {
+                if ((currentLine + word).length > maxChars && currentLine.length > 0) {
+                    lines.push(currentLine.trim());
+                    currentLine = word + ' ';
+                } else {
+                    currentLine += word + ' ';
+                }
+            });
+            lines.push(currentLine.trim());
+            return lines;
+        }
+
+        function updateContent(lang) {
+            document.querySelectorAll('[data-key]').forEach(element => {
+                const key = element.getAttribute('data-key');
+                if (content[lang][key]) {
+                    element.innerHTML = content[lang][key];
+                }
+            });
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            langToggleButton.textContent = lang === 'ar' ? 'English' : 'العربية';
+        }
+
+        function createCharts(lang) {
+            const chartData = content[lang];
+            
+            if (costBenefitChart) costBenefitChart.destroy();
+            const ctx1 = document.getElementById('costBenefitChart').getContext('2d');
+            costBenefitChart = new Chart(ctx1, {
+                type: 'bar',
+                data: {
+                    labels: chartData.chart_categories.map(label => wrapLabel(label)),
+                    datasets: [
+                        {
+                            label: chartData.chart1_fee_label,
+                            data: [5, 10, 20],
+                            backgroundColor: 'rgba(129, 140, 248, 0.6)',
+                            borderColor: 'rgba(129, 140, 248, 1)',
+                            borderWidth: 1
+                        },
+                        {
+                            label: chartData.chart1_discount_label,
+                            data: [25, 35, 50],
+                            backgroundColor: 'rgba(52, 211, 153, 0.6)',
+                            borderColor: 'rgba(52, 211, 153, 1)',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#374151'
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                color: '#374151'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#374151'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label.replace(/,/g, ' ');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            if (chanceToWinChart) chanceToWinChart.destroy();
+            const ctx2 = document.getElementById('chanceToWinChart').getContext('2d');
+            chanceToWinChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: chartData.chart_categories.map(label => wrapLabel(label)),
+                    datasets: [{
+                        label: chartData.chart2_participants_label,
+                        data: [100, 50, 30],
+                        backgroundColor: 'rgba(192, 132, 252, 0.6)',
+                        borderColor: 'rgba(192, 132, 252, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    maintainAspectRatio: false,
+                    responsive: true,
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                color: '#374151'
+                            }
+                        },
+                        y: {
+                            ticks: {
+                                color: '#374151'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#374151'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return context[0].label.replace(/,/g, ' ');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        langToggleButton.addEventListener('click', () => {
+            currentLang = currentLang === 'ar' ? 'en' : 'ar';
+            updateContent(currentLang);
+            createCharts(currentLang);
+        });
+
+        window.onload = () => {
+            updateContent(currentLang);
+            createCharts(currentLang);
+        };
+    </script>
+</body>
+</html>
